@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>body{margin:0}img{max-width:100%}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<title>Save Raju</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<style>
+/* Layout: one arcade cabinet column — HUD, pixel scene, question, four answer buttons */
+:root{
+  --night:#1d0f2e; --panel:#2b1745; --panel-hi:#3a2060;
+  --marigold:#ffb627; --rani:#e8368f; --peacock:#19a7a0; --cream:#fff3d6; --dim:#8f7aad; --ember:#ff5a1f;
+  --display:"Press Start 2P", ui-monospace, "Courier New", monospace;
+  --body:"VT323", ui-monospace, "Courier New", monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+[hidden]{display:none!important}
+body{background:var(--night);color:var(--cream);font-family:var(--body);font-size:24px;line-height:1.15;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:520px;margin:0 auto;min-height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;
+  padding-block:12px 24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.hud{display:flex;align-items:center;justify-content:space-between;gap:10px;font-family:var(--display);font-size:11px;letter-spacing:.06em}
+.hud .score{color:var(--marigold)}
+.hud .qn{color:var(--dim)}
+.hearts{display:flex;gap:4px}
+.hearts svg{width:18px;height:16px;display:block}
+.mute{font-family:var(--display);font-size:10px;background:none;border:2px solid var(--dim);color:var(--dim);padding:5px 6px;cursor:pointer}
+.mute:focus-visible,.ans:focus-visible,.big:focus-visible{outline:3px solid var(--peacock);outline-offset:2px}
+.timer{height:8px;background:var(--panel);border:2px solid var(--panel-hi)}
+.timer i{display:block;height:100%;width:100%;background:var(--peacock);transition:background .2s}
+.timer i.low{background:var(--ember)}
+.screen{position:relative;border:4px solid var(--marigold);box-shadow:0 0 0 4px var(--rani),0 0 24px rgba(232,54,143,.35);background:#000;line-height:0}
+.screen canvas{width:100%;max-width:100%;height:auto;aspect-ratio:4/3;image-rendering:pixelated;image-rendering:crisp-edges;display:block}
+.screen::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(to bottom,rgba(0,0,0,.18) 0 1px,transparent 1px 3px)}
+.overlay{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  text-align:center;padding:14px;background:rgba(29,15,46,.86);line-height:1.15}
+.overlay h1{font-family:var(--display);font-size:clamp(16px,5.4vw,24px);color:var(--marigold);margin:0;text-shadow:3px 3px 0 var(--rani);text-wrap:balance;line-height:1.3}
+.overlay p{margin:0;max-width:34ch;font-size:clamp(17px,4.6vw,22px);color:var(--cream)}
+.overlay .stat{font-family:var(--display);font-size:11px;color:var(--peacock);letter-spacing:.06em;line-height:1.8}
+.big{font-family:var(--display);font-size:13px;letter-spacing:.08em;background:var(--rani);color:var(--cream);border:0;padding:12px 16px;
+  box-shadow:4px 4px 0 var(--marigold);cursor:pointer}
+.big:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--marigold)}
+.blink{animation:blink 1s steps(2,start) infinite}
+@keyframes blink{to{visibility:hidden}}
+.question{margin:0;min-height:2.4em;font-size:28px;text-wrap:balance}
+.question,.answers,.screen{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.question.intro{font-size:22px;color:var(--dim)}
+.answers{display:grid;gap:8px}
+.ans{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font-family:var(--body);font-size:24px;color:var(--cream);
+  background:var(--panel);border:3px solid var(--panel-hi);padding:8px 12px;cursor:pointer;min-height:48px}
+.ans b{font-family:var(--display);font-size:11px;color:var(--marigold);font-weight:400;flex:none}
+.ans:hover:not(:disabled){border-color:var(--marigold)}
+.ans:disabled{cursor:default}
+.ans.right{background:var(--peacock);border-color:var(--cream)}
+.ans.wrong{background:var(--ember);border-color:var(--cream)}
+.feedback{font-family:var(--display);font-size:11px;min-height:1.4em;margin:0;letter-spacing:.06em}
+.feedback.ok{color:var(--peacock)} .feedback.bad{color:var(--ember)}
+.foot{font-size:18px;color:var(--dim);text-align:center;margin:0}
+.idform{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;max-width:300px}
+.idform label{font-family:var(--display);font-size:10px;letter-spacing:.08em;color:var(--peacock)}
+.idform input{width:100%;box-sizing:border-box;font-family:var(--body);font-size:20px;color:var(--cream);background:var(--night);
+  border:3px solid var(--marigold);padding:6px 10px;text-align:center;border-radius:0}
+.idform input:focus{outline:3px solid var(--peacock);outline-offset:2px}
+.idform .err{font-family:var(--display);font-size:9px;color:var(--ember);min-height:1.2em;line-height:1.4}
+.idform .note{font-size:16px;color:var(--dim);max-width:30ch}
+.player{font-family:var(--display);font-size:9px;color:var(--dim);letter-spacing:.06em;margin:0;overflow-wrap:anywhere}
+.linkish{background:none;border:0;color:var(--dim);font-family:var(--body);font-size:18px;text-decoration:underline;cursor:pointer;padding:0}
+@media (prefers-reduced-motion:reduce){.blink{animation:none}}
+/* phones: 2x2 answers and tighter type so everything fits one screen */
+@media (max-width:520px){
+  .wrap{gap:8px;padding-block:8px 16px}
+  .question{font-size:23px;min-height:2.2em;line-height:1.05}
+  .question.intro{font-size:19px}
+  .answers{grid-template-columns:1fr 1fr;gap:6px}
+  .ans{font-size:20px;padding:6px 8px;gap:6px;min-height:50px;line-height:1}
+  .ans b{font-size:9px}
+  .feedback{min-height:1.2em}
+  .foot{font-size:15px}
+}
+</style>
+
+</head><body>
+<div class="wrap">
+  <div class="hud">
+    <span class="score" id="score">SCORE 0000</span>
+    <span class="qn" id="qn">Q 0/10</span>
+    <span class="hearts" id="hearts" aria-label="3 lives left"></span>
+    <button class="mute" id="mute" type="button" aria-pressed="false">SND ON</button>
+  </div>
+  <div class="timer" aria-hidden="true"><i id="bar"></i></div>
+  <p class="player" id="player" hidden></p>
+
+  <div class="screen">
+    <canvas id="c" width="160" height="120" aria-label="Raju at his desk in a classroom full of students while Sharma Ma'am watches"></canvas>
+    <div class="overlay" id="overlay">
+      <h1>SAVE RAJU</h1>
+      <form class="idform" id="idform" novalidate>
+        <input id="nick" name="nick" maxlength="16" autocomplete="nickname" spellcheck="false" placeholder="Nickname" aria-label="Nickname">
+        <input id="email" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="Email (private)" aria-label="Email">
+        <span class="err" id="err" aria-live="polite"></span>
+        <button class="big" id="start" type="submit"><span class="blink">PRESS START</span></button>
+        <span class="note">Email is only used to contact the winner.</span>
+      </form>
+    </div>
+  </div>
+
+  <p class="question intro" id="question" aria-live="polite">Raju forgot his homework! 10 questions on India, 10 seconds each. No AI, no Google: leaving the game counts as a wrong answer. Top 5 play a live final at the stand.</p>
+  <div class="answers" id="answers">
+    <button class="ans" type="button" id="a0" disabled><b>A</b><span>Lights</span></button>
+    <button class="ans" type="button" id="a1" disabled><b>B</b><span>Colours</span></button>
+    <button class="ans" type="button" id="a2" disabled><b>C</b><span>Kites</span></button>
+    <button class="ans" type="button" id="a3" disabled><b>D</b><span>Harvest</span></button>
+  </div>
+  <p class="feedback" id="feedback" aria-live="polite"></p>
+  <p class="foot">Indian Cultural Day · Arcade Corner</p>
+</div>
+
+<script>
+(() => {
+// ---------- Questions (first option is the correct one; options get shuffled) ----------
+const BANK = [
+  ["Diwali is known as the festival of…", ["Lights","Colours","Kites","Harvest"]],
+  ["Holi is known as the festival of…", ["Colours","Lights","Boats","Lamps"]],
+  ["What is India's national animal?", ["Bengal tiger","Asiatic lion","Indian elephant","Peacock"]],
+  ["What is India's national bird?", ["Peacock","Parrot","Eagle","Kingfisher"]],
+  ["Which city is India's capital?", ["New Delhi","Mumbai","Kolkata","Bengaluru"]],
+  ["The Taj Mahal is in which city?", ["Agra","Jaipur","Lucknow","Delhi"]],
+  ["Which city is called the Pink City?", ["Jaipur","Udaipur","Mysuru","Shimla"]],
+  ["Dhokla comes from which state?", ["Gujarat","Punjab","Kerala","Odisha"]],
+  ["Kathakali is a classical dance from…", ["Kerala","Rajasthan","Assam","Punjab"]],
+  ["Pongal is a harvest festival mainly celebrated in…", ["Tamil Nadu","Bihar","Goa","Haryana"]],
+  ["Which festival celebrates the bond between brothers and sisters?", ["Raksha Bandhan","Karwa Chauth","Lohri","Onam"]],
+  ["Who wrote India's national anthem, Jana Gana Mana?", ["Rabindranath Tagore","Mahatma Gandhi","Bankim Chandra Chatterjee","Sarojini Naidu"]],
+  ["In which year did India become independent?", ["1947","1950","1942","1857"]],
+  ["Chess grew out of an ancient Indian game called…", ["Chaturanga","Pachisi","Kabaddi","Gilli-danda"]],
+  ["Which Indian mission landed near the Moon's south pole in 2023?", ["Chandrayaan-3","Mangalyaan","Aryabhata","Gaganyaan"]],
+  ["What was India's first satellite?", ["Aryabhata","Rohini","INSAT-1A","Bhaskara"]],
+  ["Ravi Shankar was a master of which instrument?", ["Sitar","Tabla","Sarod","Veena"]],
+  ["Bollywood is based in which city?", ["Mumbai","Chennai","Hyderabad","Pune"]],
+  ["Rasgulla is a sweet made from…", ["Chhena (cottage cheese)","Rice flour","Gram flour","Coconut"]],
+  ["Which mountain range runs along India's northern border?", ["Himalayas","Western Ghats","Aravallis","Vindhyas"]],
+  ["Which river is the most sacred in Hinduism?", ["Ganga","Godavari","Narmada","Yamuna"]],
+  ["How many languages are listed in the Eighth Schedule of India's Constitution?", ["22","14","18","28"]],
+  ["Onam is the harvest festival of which state?", ["Kerala","Karnataka","West Bengal","Maharashtra"]],
+  ["What is the currency of India?", ["Rupee","Taka","Rupiah","Dinar"]],
+  ["What is India's national flower?", ["Lotus","Rose","Marigold","Jasmine"]],
+  ["The Gateway of India stands in which city?", ["Mumbai","Delhi","Chennai","Kolkata"]],
+  ["Which spice gives many Indian curries their yellow colour?", ["Turmeric","Saffron","Cumin","Cardamom"]],
+  ["Which state is famous for its tea and one-horned rhinos?", ["Assam","Kerala","Punjab","Goa"]],
+  ["The Golden Temple is in which city?", ["Amritsar","Varanasi","Jaipur","Hyderabad"]],
+  ["Who is called the Father of the Nation in India?", ["Mahatma Gandhi","Jawaharlal Nehru","Subhas Chandra Bose","B. R. Ambedkar"]],
+  ["Who was India's first Prime Minister?", ["Jawaharlal Nehru","Mahatma Gandhi","Sardar Patel","Indira Gandhi"]],
+  ["Who is known as the chief architect of India's Constitution?", ["B. R. Ambedkar","Jawaharlal Nehru","Rajendra Prasad","Sardar Patel"]],
+  ["India celebrates Republic Day on…", ["26 January","15 August","2 October","1 May"]],
+  ["Diwali usually falls in which months?", ["October–November","March–April","June–July","December–January"]],
+  ["What is a diya?", ["A small oil lamp","A sweet","A drum","A dance"]],
+  ["Dosa is a fermented crepe from which region?", ["South India","Northeast India","Kashmir","Rajasthan"]],
+  ["Garba is a folk dance from which state?", ["Gujarat","Kerala","Assam","Bihar"]],
+  ["Bharatanatyam is a classical dance from…", ["Tamil Nadu","Punjab","Gujarat","West Bengal"]],
+  ["How many spokes does the wheel on India's flag have?", ["24","12","16","32"]],
+  ["Snakes and ladders began in India as a game called…", ["Moksha Patam","Pachisi","Chaturanga","Kho-kho"]],
+  ["Which city is called the Silicon Valley of India?", ["Bengaluru","Pune","Chennai","Noida"]],
+  ["What is India's largest state by area?", ["Rajasthan","Uttar Pradesh","Maharashtra","Madhya Pradesh"]],
+  ["What is India's most populous state?", ["Uttar Pradesh","Maharashtra","Bihar","West Bengal"]],
+  ["Which festival celebrates the birth of Lord Ganesha?", ["Ganesh Chaturthi","Navratri","Janmashtami","Baisakhi"]],
+  ["Which sweet is a deep-fried spiral soaked in syrup?", ["Jalebi","Ladoo","Barfi","Kheer"]],
+];
+const ROUNDS = 10, LIVES = 3, SECS = 10;
+
+// ---------- Backend: paste your Google Apps Script web-app URL here ----------
+const SHEET_URL = "https://script.google.com/macros/s/AKfycbwKeAFrjzUWL-ny77NMkrcdud3hFdaItkL09ocPfvuCikx9Q9dsa7rDZ7L7os5p5MY/exec";   // paste your Apps Script web-app URL, e.g. "https://script.google.com/macros/s/XXXX/exec"
+let EMAIL = "", NICK = "";
+try { EMAIL = localStorage.getItem("raju-email") || ""; NICK = localStorage.getItem("raju-nick") || ""; } catch(e) {}
+let runId = "";
+function send(row){
+  if (!SHEET_URL) return;
+  try {
+    fetch(SHEET_URL, { method:"POST", mode:"no-cors", keepalive:true,
+      headers:{ "Content-Type":"text/plain;charset=utf-8" },
+      body: JSON.stringify({ ...row, email: EMAIL, nick: NICK, run: runId, ua: navigator.userAgent.slice(0,120) }) }).catch(()=>{});
+  } catch(e) {}
+}
+
+// ---------- DOM ----------
+const $ = id => document.getElementById(id);
+const cv = $("c"), g = cv.getContext("2d");
+const btns = [0,1,2,3].map(i => $("a"+i));
+const overlay = $("overlay"), qEl = $("question"), fb = $("feedback"), bar = $("bar");
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// ---------- Sound (square-wave beeps, only after a tap) ----------
+let ac = null, muted = false;
+function beep(f, d = .1, type = "square", when = 0, vol = .06){
+  if (muted || !ac) return;
+  const t = ac.currentTime + when, o = ac.createOscillator(), v = ac.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  v.gain.setValueAtTime(vol, t); v.gain.exponentialRampToValueAtTime(.0001, t + d);
+  o.connect(v).connect(ac.destination); o.start(t); o.stop(t + d + .02);
+}
+const sfx = {
+  right(){ beep(660,.08); beep(990,.12,"square",.08); },
+  wrong(){ beep(160,.25,"sawtooth"); },
+  tick(){ beep(1200,.03,"square",0,.03); },
+  win(){ [523,659,784,1046].forEach((f,i)=>beep(f,.14,"square",i*.12)); },
+  lose(){ [440,330,247,165].forEach((f,i)=>beep(f,.18,"triangle",i*.16,.08)); },
+};
+$("mute").onclick = e => {
+  muted = !muted; e.currentTarget.textContent = muted ? "SND OFF" : "SND ON";
+  e.currentTarget.setAttribute("aria-pressed", String(muted));
+};
+
+// ---------- Game state ----------
+let S = { phase:"title", qs:[], i:0, right:0, wrong:0, score:0, t0:0, locked:false, lastTick:0 };
+const shuffle = a => { a = a.slice(); for (let i=a.length-1;i>0;i--){ const j=Math.random()*(i+1)|0; [a[i],a[j]]=[a[j],a[i]]; } return a; };
+
+function hearts(){
+  const left = LIVES - S.wrong;
+  $("hearts").innerHTML = Array.from({length:LIVES},(_,k)=>{
+    const c = k < left ? "var(--rani)" : "var(--panel-hi)";
+    return `<svg viewBox="0 0 7 6" shape-rendering="crispEdges" aria-hidden="true"><path fill="${c}" d="M1 0h2v1h1V0h2v1h1v2H6v1H5v1H4v1H3V5H2V4H1V3H0V1h1z"/></svg>`;
+  }).join("");
+  $("hearts").setAttribute("aria-label", `${left} lives left`);
+}
+function hud(){
+  $("score").textContent = "SCORE " + String(S.score).padStart(4,"0");
+  $("qn").textContent = `Q ${Math.min(S.i+1,ROUNDS)}/${ROUNDS}`;
+  hearts();
+}
+
+function start(){
+  $("player").textContent = "PLAYER  " + NICK.toUpperCase(); $("player").hidden = false;
+  runId = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  send({ event:"start" });
+  if (!ac) { try { ac = new (window.AudioContext||window.webkitAudioContext)(); } catch(e){} }
+  S = { phase:"ask", qs: shuffle(BANK).slice(0,ROUNDS).map(([q,opts])=>({q, opts: shuffle(opts), ans: opts[0]})),
+        i:0, right:0, wrong:0, score:0, t0:0, locked:false, lastTick:0 };
+  overlay.hidden = true; fb.textContent = ""; fb.className = "feedback";
+  parts.length = 0;
+  ask(); beep(523,.08); beep(784,.1,"square",.08);
+}
+
+function ask(){
+  const q = S.qs[S.i];
+  qEl.textContent = q.q; qEl.classList.remove("intro");
+  q.opts.forEach((o,k)=>{ const b = btns[k]; b.querySelector("span").textContent = o; b.className = "ans"; b.disabled = false; });
+  S.t0 = performance.now(); S.locked = false; S.lastTick = SECS;
+  hud(); btns[0].focus({preventScroll:true});
+}
+
+function choose(k){
+  if (S.phase !== "ask" || S.locked) return;
+  S.locked = true;
+  const q = S.qs[S.i], secsLeft = Math.max(0, SECS - (performance.now() - S.t0)/1000);
+  const ok = k >= 0 && q.opts[k] === q.ans;
+  btns.forEach((b,j)=>{ b.disabled = true; if (q.opts[j] === q.ans) b.classList.add("right"); });
+  if (k >= 0 && !ok) btns[k].classList.add("wrong");
+  if (ok){
+    S.right++; S.score += 100 + Math.round(secsLeft*10);
+    fb.textContent = pick(["SHABAASH!","SAHI JAWAB!","KYA BAAT HAI!","PERFECT!"]); fb.className = "feedback ok"; sfx.right();
+  } else {
+    S.wrong++; fb.className = "feedback bad"; sfx.wrong();
+    fb.textContent = k === -2 ? "NO PEEKING! 👀" : k < 0 ? "TIME'S UP!" : "ARRE NAHI!";
+    if (k === -2) S.peeks = (S.peeks||0) + 1;
+  }
+  S.flash = { ok, t: performance.now() };
+  hud();
+  setTimeout(next, 1100);
+}
+const pick = a => a[Math.random()*a.length|0];
+
+function next(){
+  if (S.wrong >= LIVES){ S.phase = "falling"; S.fallAt = performance.now(); qEl.textContent = "Uh oh… Sharma Ma'am is coming over."; fb.textContent = ""; return; }
+  S.i++;
+  if (S.i >= ROUNDS){ S.phase = "rising"; S.riseAt = performance.now(); qEl.textContent = "The bell rings…"; fb.textContent = ""; return; }
+  fb.textContent = ""; fb.className = "feedback";
+  ask();
+}
+
+function end(won){
+  S.phase = won ? "won" : "lost";
+  btns.forEach(b=>b.disabled = true);
+  if (won) sfx.win(); else sfx.lose();
+  send({ event:"finish", result: won ? "saved" : "spanked", score: S.score, correct: S.right, answered: S.i + 1, peeks: S.peeks||0 });
+  overlay.innerHTML = won
+    ? `<h1>RAJU IS SAVED!</h1><p>Sharma Ma'am gives him a gold star.</p>
+       <div class="stat">${S.right}/${ROUNDS} CORRECT<br>SCORE ${String(S.score).padStart(4,"0")}<br>YOUR BEST SCORE COUNTS</div>
+       <button class="big" type="button" id="again">PLAY AGAIN</button>
+       <button class="linkish" type="button" id="switch">Not ${esc(NICK)}? Change player</button>`
+    : `<h1>WHACK! WHACK!</h1><p>Raju won't be sitting down for a while. Try again?</p>
+       <div class="stat">${S.right}/${S.i+1} CORRECT<br>SCORE ${String(S.score).padStart(4,"0")}<br>YOUR BEST SCORE COUNTS</div>
+       <button class="big" type="button" id="again">TRY AGAIN</button>
+       <button class="linkish" type="button" id="switch">Not ${esc(NICK)}? Change player</button>`;
+  overlay.hidden = false;
+  qEl.textContent = won ? "Top of the class. Show your score to a friend!" : "Three strikes. Raju believes in you.";
+  $("again").onclick = start; $("switch").onclick = showLogin; $("again").focus({preventScroll:true});
+}
+
+btns.forEach((b,k)=> b.onclick = () => choose(k));
+// leaving the game during a question (other app, tab, AI, search) counts as a wrong answer
+const peek = () => { if (S.phase === "ask" && !S.locked) choose(-2); };
+document.addEventListener("visibilitychange", () => { if (document.hidden) peek(); });
+addEventListener("pagehide", peek); addEventListener("blur", peek);
+["copy","cut","contextmenu"].forEach(ev => document.addEventListener(ev, e => { if (!e.target.closest || !e.target.closest("input")) e.preventDefault(); }));
+addEventListener("keydown", e => {
+  const k = "1234".indexOf(e.key); const k2 = "abcd".indexOf(e.key.toLowerCase());
+  if (S.phase === "ask" && (k >= 0 || k2 >= 0)) choose(k >= 0 ? k : k2);
+});
+const esc = t => t.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const LOGIN = overlay.innerHTML;
+function bindLogin(){
+  const inp = $("email"), nk = $("nick"); inp.value = EMAIL; nk.value = NICK;
+  $("idform").onsubmit = e => {
+    e.preventDefault();
+    const n = nk.value.replace(/[<>]/g,"").trim().slice(0,16);
+    const v = inp.value.trim().toLowerCase();
+    if (!n) { $("err").textContent = "ENTER A NICKNAME"; nk.focus(); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) { $("err").textContent = "ENTER A VALID EMAIL"; inp.focus(); return; }
+    NICK = n; EMAIL = v; try { localStorage.setItem("raju-email", v); localStorage.setItem("raju-nick", n); } catch(e) {}
+    start();
+  };
+}
+function showLogin(){
+  overlay.innerHTML = LOGIN; overlay.hidden = false; S.phase = "title"; $("player").hidden = true; parts.length = 0; fx.stand = false; fx.hits = 0;
+  bindLogin(); $("nick").focus({preventScroll:true});
+}
+bindLogin();
+
+// ---------- Pixel scene: classroom ----------
+const C = { wall:"#2f5d50", wall2:"#264d42", floor:"#7a5232", floor2:"#664428", board:"#1e3a2c", frame:"#8a5a33", chalk:"#e8efe4",
+  desk:"#a0683a", desk2:"#7a4e2b", skin:"#b8754a", tskin:"#c98d62", hot:"#d9583f", hair:"#1a1020", kurta:"#ffb627", trim:"#e8368f",
+  pyj:"#fff3d6", saree:"#e8368f", saree2:"#19a7a0", glass:"#1a1020", lens:"#cfe8ff", mouth:"#5a1020", ruler:"#e9c46a",
+  star:"#ffd23f", sweat:"#7fd3ff", white:"#ffffff", shirt:"#e9eef2", tie:"#2b4c8c",
+  dust:["#ffffff","#ffd23f","#e8efe4"], party:["#ffb627","#e8368f","#19a7a0","#fff3d6"] };
+const px = (x,y,w,h,c) => { g.fillStyle = c; g.fillRect(x|0,y|0,w,h); };
+const FONT = { A:"010101111101101", D:"110101101101110", I:"111010010010111", N:"101111111101101", Q:"010101101111011",
+  U:"101101101101111", Z:"111001010100111", W:"101101111111101", H:"101101111101101", C:"111100100100111", K:"101101110101101",
+  "!":"010010010000010", "0":"111101101101111", "1":"010110010010111", "2":"111001111100111",
+  "3":"111001111001111", "4":"101101111001001", "5":"111100111001111", "6":"111100111101111", "7":"111001001001001",
+  "8":"111101111101111", "9":"111101111001111", "/":"001001010100100", " ":"000000000000000" };
+function text(str,x,y,c){ [...str].forEach((ch,i)=>{ const f = FONT[ch]||FONT[" "]; for (let k=0;k<15;k++) if (f[k]==="1") px(x+i*4+(k%3), y+(k/3|0), 1,1,c); }); }
+function line(x0,y0,x1,y1,c){ const n = Math.max(Math.abs(x1-x0), Math.abs(y1-y0)) || 1; for (let i=0;i<=n;i++) px(Math.round(x0+(x1-x0)*i/n), Math.round(y0+(y1-y0)*i/n), 2,2,c); }
+const parts = [];
+const STUDENTS = [ {x:12, hair:"#1a1020", skin:"#a86b44", girl:true}, {x:32, hair:"#3a2418", skin:"#c58a5c", girl:false},
+  {x:52, hair:"#1a1020", skin:"#8f5a38", girl:false}, {x:72, hair:"#2a1a14", skin:"#b8754a", girl:true}, {x:92, hair:"#1a1020", skin:"#c98d62", girl:false} ];
+
+function mood(t){
+  if (S.phase === "rising" || S.phase === "won") return "smile";
+  if (S.phase === "falling" || S.phase === "lost") return "furious";
+  if (S.flash && t - S.flash.t < 1100) return S.flash.ok ? "smile" : ["stern","angry","furious"][Math.min(2, S.wrong-1)];
+  return ["neutral","stern","angry","furious"][Math.min(3, S.wrong)];
+}
+function classMood(t, m){
+  if (S.phase === "falling" || S.phase === "lost") return "laugh";
+  if (S.phase === "rising" || S.phase === "won") return "cheer";
+  if (S.flash && t - S.flash.t < 1100) return S.flash.ok ? "smile" : "laugh";
+  return "neutral";
+}
+
+function drawRoom(t){
+  px(0,0,160,84,C.wall); px(0,58,160,2,C.wall2);
+  px(0,84,160,36,C.floor); for (let x=8;x<160;x+=24) px(x,84,1,36,C.floor2); px(0,101,160,1,C.floor2);
+  px(8,6,88,40,C.frame); px(10,8,84,36,C.board);
+  text("INDIA QUIZ",16,13,C.chalk);
+  const qn = S.phase === "title" ? "Q 0/10" : "Q " + Math.min(S.i+1,ROUNDS) + "/10";
+  text(qn,16,22,C.chalk);
+  for (let x=16;x<84;x++){ if ((x*7)%11 < 6) px(x, 34 + Math.round(Math.sin(x/3)), 1,1,"rgba(232,239,228,.55)"); }
+  px(10,44,84,2,C.frame); px(30,43,4,1,C.white); px(60,43,3,1,"#ffd0e0");
+  px(99,8,11,11,C.frame); px(100,9,9,9,C.white); px(104,10,1,4,C.hair);
+  const a = t/1000; px(104+Math.round(Math.cos(a)*3),13+Math.round(Math.sin(a)*3),1,1,C.trim);
+}
+
+function drawStudents(t, cm){
+  STUDENTS.forEach((st,k)=>{
+    const bounce = (cm === "laugh" || cm === "cheer") && !reduced ? (Math.sin(t/90 + k) > 0 ? -1 : 0) : 0;
+    const x = st.x, y = 62 + bounce;
+    px(x+2,y,5,5,st.skin); px(x+2,y,5,2,st.hair);
+    if (st.girl){ px(x+1,y+1,1,5,st.hair); px(x+7,y+1,1,5,st.hair); px(x+1,y+6,1,1,C.trim); px(x+7,y+6,1,1,C.trim); }
+    px(x+3,y+2,1,1,C.hair); px(x+5,y+2,1,1,C.hair);
+    if (cm === "laugh" || cm === "cheer") px(x+3,y+4,3,1,C.mouth); else if (cm === "smile") { px(x+3,y+3,1,1,C.mouth); px(x+4,y+4,1,1,C.mouth); px(x+5,y+3,1,1,C.mouth); } else px(x+4,y+4,1,1,C.mouth);
+    px(x+1,y+5,7,6,C.shirt); px(x+4,y+6,1,4,C.tie);
+    if (cm === "cheer"){ px(x,y-3,1,5,st.skin); px(x+8,y-3,1,5,st.skin); }
+    else if (cm === "laugh" && k%2){ px(x+3,y+4,3,1,st.skin); }   // hand over mouth giggle
+    px(x-2,y+11-bounce,13,2,C.desk); px(x-1,y+13-bounce,11,7,C.desk2);
+  });
+  if (cm === "laugh" && !reduced && ((t/300)|0) % 2) { text("HA",20,54,C.star); text("HA",80,52,C.star); }
+}
+
+function drawDesk(){
+  px(16,92,48,4,C.desk); px(18,96,44,12,C.desk2); px(19,108,2,12,C.desk2); px(59,108,2,12,C.desk2);
+  px(46,89,12,3,C.pyj); px(51,89,1,3,C.trim);
+}
+
+function drawRaju(t, m){
+  if (fx.stand){ drawRajuStanding(t); return; }
+  const happy = m === "smile", scared = m === "angry" || m === "furious";
+  const jump = (S.phase === "rising" || S.phase === "won") && !reduced ? -Math.abs(Math.round(Math.sin(t/120)*4)) : 0;
+  const shake = scared && !reduced ? (Math.sin(t/50) > 0 ? 1 : 0) : 0;
+  const x = 30 + shake, y = 72 + jump;
+  px(x-1,y+12,11,9,C.kurta); px(x+4,y+13,1,6,C.trim);
+  px(x,y,9,9,C.skin); px(x,y,9,3,C.hair); px(x,y+3,1,2,C.hair); px(x+8,y+3,1,2,C.hair);
+  px(x+2,y+5,1,1,C.hair); px(x+6,y+5,1,1,C.hair);
+  if (happy){ px(x+2,y+7,1,1,C.mouth); px(x+3,y+8,3,1,C.mouth); px(x+6,y+7,1,1,C.mouth); }
+  else if (scared){ px(x+4,y+7,1,2,C.mouth); }
+  else px(x+3,y+7,3,1,C.mouth);
+  if (scared){ const d = reduced ? 0 : ((t/60)|0) % 6; px(x+10,y+2+d,1,2,C.sweat); px(x-2,y+4+((d+3)%6),1,2,C.sweat); }
+  px(x-4,y+18,4,2,C.skin); px(x+9,y+18,4,2,C.skin);
+  if (happy && S.phase !== "title"){ px(x+3,y-6,3,3,C.star); px(x+4,y-7,1,1,C.star); px(x+4,y-3,1,1,C.star); }
+}
+
+// side view, facing left, backside towards the teacher
+function drawRajuStanding(t){
+  const rx = 68, hop = fx.hopUntil > t ? -5 : 0, ry = 78 + hop;
+  const hit = fx.hits > 0;
+  px(rx,ry,8,8,C.skin); px(rx,ry,8,3,C.hair); px(rx+6,ry+3,2,3,C.hair);
+  px(rx+1,ry+4,1,1,C.hair); px(rx,ry+6,2,1,C.mouth);
+  if (hit){ px(rx+2,ry+5,1,2+(((t/150)|0)%3),C.sweat); }
+  px(rx,ry+8,8,8,C.kurta); px(rx+1,ry+9,1,6,C.trim);
+  px(rx+1,ry+16,7,4,C.pyj); px(rx+7,ry+16,2,3,C.pyj);
+  px(rx+1,ry+20,2,5,C.pyj); px(rx+5,ry+20,2,5,C.pyj); px(rx,ry+25,3,1,C.hair); px(rx+4,ry+25,3,1,C.hair);
+  if (hit){ px(rx+8,ry+10,2,6,C.skin); px(rx+8,ry+16,2,2,C.skin); }   // hand rubbing backside
+  else { px(rx-1,ry+9,2,6,C.skin); }
+  if (fx.textUntil > t) text("WHACK!", rx-18, ry-10, C.star);
+}
+
+function drawTeacher(t, m, x){
+  const y = 22;
+  px(x-2,y+42,22,36,C.saree); px(x-2,y+76,22,2,C.saree2); px(x+2,y+78,4,2,C.hair); px(x+12,y+78,4,2,C.hair);
+  px(x+1,y+30,16,14,C.saree2); for (let i=0;i<13;i++) px(x+1+i,y+30+i,2,1,C.saree);
+  px(x+17,y+32,3,12,C.tskin);
+  if (fx.stand){
+    const down = fx.swingUntil > t;
+    px(x-2,y+32,3,12,C.tskin);
+    if (down) line(x-2, y+44, 78, 95, C.ruler); else line(x-2, y+44, x-12, y+22, C.ruler);
+  } else {
+    px(x-2,y+32,3,14,C.tskin);
+    const tapping = (m === "angry" || m === "furious") && !reduced;
+    const ry = tapping && Math.sin(t/110) > 0 ? 4 : 0;
+    px(x+19,y+18+ry,2,24,C.ruler); for (let k=0;k<6;k++) px(x+19,y+20+ry+k*4,1,1,C.desk2);
+  }
+  const face = m === "furious" ? C.hot : C.tskin;
+  px(x+2,y+8,14,14,face);
+  px(x+5,y,8,6,C.hair); px(x+2,y+6,14,3,C.hair); px(x+2,y+9,2,6,C.hair); px(x+14,y+9,2,6,C.hair);
+  px(x+8,y+11,2,1,C.trim);
+  const L = x+3, R = x+11;
+  if (m === "smile"){ px(L,y+11,1,1,C.hair); px(L+1,y+10,2,1,C.hair); px(L+3,y+11,1,1,C.hair); px(R,y+11,1,1,C.hair); px(R+1,y+10,2,1,C.hair); px(R+3,y+11,1,1,C.hair); }
+  else if (m === "neutral"){ px(L,y+12,4,1,C.hair); px(R,y+12,4,1,C.hair); }
+  else { const h = m === "stern" ? 1 : 2;
+    px(L,y+11,2,h,C.hair); px(L+2,y+12,2,h,C.hair); px(R+2,y+11,2,h,C.hair); px(R,y+12,2,h,C.hair); }
+  px(x+3,y+14,5,3,C.glass); px(x+4,y+15,3,1,C.lens); px(x+10,y+14,5,3,C.glass); px(x+11,y+15,3,1,C.lens); px(x+8,y+15,2,1,C.glass);
+  px(x+5,y+15,1,1,C.hair); px(x+12,y+15,1,1,C.hair);
+  const mx = x+6, my = y+18;
+  if (m === "smile"){ px(mx-1,my,1,1,C.mouth); px(mx,my+1,6,1,C.mouth); px(mx+6,my,1,1,C.mouth); px(mx,my,6,1,C.white); }
+  else if (m === "neutral") px(mx,my+1,6,1,C.mouth);
+  else if (m === "furious"){ px(mx,my,6,3,C.mouth); px(mx,my,6,1,C.white); }
+  else { px(mx-1,my+2,1,1,C.mouth); px(mx,my+1,6,1,C.mouth); px(mx+6,my+2,1,1,C.mouth); if (m === "angry") px(mx,my+2,6,1,C.mouth); }
+  const bob = reduced ? 0 : Math.round(Math.sin(t/200));
+  if (m === "smile"){ px(x+24,y-2+bob,2,2,C.trim); px(x+27,y-2+bob,2,2,C.trim); px(x+24,y+bob,5,2,C.trim); px(x+25,y+2+bob,3,1,C.trim); px(x+26,y+3+bob,1,1,C.trim); }
+  if (m === "angry" || m === "furious"){ px(x+25,y-3+bob,2,5,C.hot); px(x+25,y+3+bob,2,2,C.hot); }
+  if (m === "furious"){ px(x+29,y-3+bob,2,5,C.hot); px(x+29,y+3+bob,2,2,C.hot);
+    if (!reduced) for (let k=0;k<4;k++){ const sy = y+4 - ((t/40 + k*5) % 12); px(x+(k%2?16:1), sy, 1,1,"rgba(255,255,255,.7)"); } }
+}
+
+function drawParts(){
+  for (let k=parts.length-1;k>=0;k--){ const p = parts[k]; p.x+=p.vx; p.y+=p.vy; p.vy+=p.g; p.life--;
+    px(p.x,p.y,1,1,p.c); if (p.life<=0) parts.splice(k,1); }
+}
+function burst(x,y,n,colors,up,gr){ for (let k=0;k<n;k++) parts.push({x,y,vx:(Math.random()-.5)*2.4, vy:-Math.random()*up, g:gr, c:colors[k%colors.length], life:30+Math.random()*25}); }
+
+const fx = { stand:false, hits:0, swingUntil:0, hopUntil:0, textUntil:0, starAt:0 };
+let winDone = false, loseDone = false;
+function frame(t){
+  if (S.phase === "ask" && !S.locked){
+    const left = SECS - (t - S.t0)/1000;
+    bar.style.width = Math.max(0, left/SECS*100) + "%";
+    bar.classList.toggle("low", left < 5);
+    const whole = Math.ceil(left); if (left < 5 && whole < S.lastTick){ S.lastTick = whole; sfx.tick(); }
+    if (left <= 0) choose(-1);
+  } else if (S.phase !== "ask") { bar.style.width = S.phase === "title" ? "100%" : "0%"; }
+  if (S.phase === "ask" || S.phase === "title") { winDone = loseDone = false; fx.stand = false; fx.hits = 0; }
+
+  let tx = 112;
+  if (S.phase === "falling" || S.phase === "lost"){
+    const e = t - S.fallAt;
+    fx.stand = e > 300;
+    tx = 112 - 22 * Math.min(1, Math.max(0, (e - 300) / 700));
+    const due = [1300, 1850, 2400].filter(ms => e >= ms).length;
+    if (due > fx.hits){ fx.hits = due; fx.swingUntil = t + 160; fx.hopUntil = t + 200; fx.textUntil = t + 450;
+      burst(78, 95, 18, C.dust, 1.8, .1); beep(120,.12,"square",0,.1); beep(900,.06,"square",.04,.05); }
+    if (S.phase === "falling" && !loseDone && e > 3700){ loseDone = true; end(false); }
+  }
+  if (S.phase === "rising"){
+    if (!fx.starAt){ fx.starAt = t; burst(36,64,60,C.party,2.6,.05); }
+    if (!winDone && t - fx.starAt > 1500){ winDone = true; fx.starAt = 0; end(true); }
+  }
+
+  const m = mood(t);
+  drawRoom(t); drawStudents(t, classMood(t, m)); drawDesk(); drawRaju(t, m); drawTeacher(t, m, tx); drawParts();
+  requestAnimationFrame(frame);
+}
+hearts();
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body></html>
