@@ -8,7 +8,7 @@
 </style>
 <script>
 const SHEET_URL = "https://script.google.com/macros/s/AKfycbwKeAFrjzUWL-ny77NMkrcdud3hFdaItkL09ocPfvuCikx9Q9dsa7rDZ7L7os5p5MY/exec";   // e.g. "https://script.google.com/macros/s/XXXX/exec"
-const GAME_URL  = "";   // e.g. "https://yourname.github.io/save-raju/"
+const GAME_URL  = "https://harishparayil.github.io/save-raju/";   // e.g. "https://yourname.github.io/save-raju/"
 const CLOSES_AT = "";   // optional, e.g. "18:00" – shown on screen
 </script>
 <style>
@@ -45,7 +45,7 @@ tr.new td{animation:flash 1.2s 2}
 <div class="wrap">
   <main>
     <h1>SAVE RAJU · TOP 10</h1>
-    <p class="sub" id="sub">BEST SCORE PER PLAYER · TOP 5 PLAY THE LIVE FINAL</p>
+    <p class="sub" id="sub">SURVIVAL MODE · FIRST GAME COUNTS</p>
     <table><tbody id="rows"><tr><td class="empty">Waiting for the first scores…</td></tr></tbody></table>
     <p class="foot" id="foot"></p>
   </main>
@@ -63,14 +63,14 @@ const esc = t => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":
 let prev = {};
 if (GAME_URL){ $("url").textContent = GAME_URL.replace(/^https?:\/\//,""); try { new QRCode($("qr"), { text: GAME_URL, width: 320, height: 320, correctLevel: QRCode.CorrectLevel.M }); } catch(e) {} }
 else { $("qr").hidden = true; $("url").textContent = "Set GAME_URL to show the QR code"; }
-if (CLOSES_AT) $("sub").textContent = "BEST SCORE PER PLAYER · TOP 5 AT " + CLOSES_AT + " PLAY THE LIVE FINAL";
+if (CLOSES_AT) $("sub").textContent = "SURVIVAL MODE · FIRST GAME COUNTS · TOP SCORE AT " + CLOSES_AT + " WINS";
 
 function render(d){
   const top = (d.top || []).slice(0,10);
   if (!top.length){ $("rows").innerHTML = '<tr><td class="empty">Waiting for the first scores…</td></tr>'; }
   else $("rows").innerHTML = top.map((p,i) => {
     const key = p.nick + "|" + p.score, isNew = Object.keys(prev).length && !prev[key];
-    return `<tr class="${i<3 ? "top"+(i+1) : ""}${i<5 ? " final" : ""}${i===4 ? " cutoff" : ""}${isNew ? " new" : ""}"><td class="r">${i+1}</td><td class="n">${esc(p.nick)}</td><td class="c">${p.correct}/10</td><td class="s">${String(p.score).padStart(4,"0")}</td></tr>`;
+    return `<tr class="${i<3 ? "top"+(i+1) : ""}${i<5 ? " final" : ""}${i===4 ? " cutoff" : ""}${isNew ? " new" : ""}"><td class="r">${i+1}</td><td class="n">${esc(p.nick)}</td><td class="c">${p.correct} ✓</td><td class="s">${String(p.score).padStart(4,"0")}</td></tr>`;
   }).join("");
   prev = Object.fromEntries(top.map(p => [p.nick + "|" + p.score, 1]));
   $("stats").innerHTML = `${d.players || 0} PLAYERS<br>${d.games || 0} GAMES PLAYED`;
@@ -78,7 +78,7 @@ function render(d){
 }
 function load(){
   if (!SHEET_URL){ render({ demo:true, players:12, games:31, top:[
-    {nick:"Priya",score:2140,correct:10},{nick:"Tom",score:1985,correct:10},{nick:"Ana",score:1760,correct:9},{nick:"Kenji",score:1590,correct:9},
+    {nick:"Priya",score:4140,correct:22},{nick:"Tom",score:3985,correct:21},{nick:"Ana",score:1760,correct:9},{nick:"Kenji",score:1590,correct:9},
     {nick:"Léa",score:1410,correct:8},{nick:"Omar",score:1300,correct:8},{nick:"Sofia",score:1180,correct:7},{nick:"Ravi",score:990,correct:6},
     {nick:"Max",score:860,correct:6},{nick:"Chen",score:640,correct:5}] }); return; }
   const cb = "lb" + Date.now(), s = document.createElement("script");
